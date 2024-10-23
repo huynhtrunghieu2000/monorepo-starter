@@ -1,0 +1,54 @@
+version: "3"
+
+services:
+  web:
+    container_name: web
+    build:
+      context: .
+      dockerfile: ./apps/web-vite/Dockerfile
+    restart: always
+    ports:
+      - 3000:3000
+    networks:
+      - app_network
+
+  api:
+    container_name: api
+    depends_on:
+      - postgresdb
+    build:
+      context: .
+      dockerfile: ./apps/api/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://postgres:secret@postgresdb:5432/postgres
+      - NODE_ENV=production
+    env_file:
+      - ./apps/api/.env
+    restart: no
+    ports:
+      - 3001:3001
+    networks:
+      - app_network
+
+  postgresdb:
+    container_name: postgresdb
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+volumes:
+  dbdata:
+    driver: local
+
+networks:
+  app_network:
+    driver: bridge
